@@ -1,12 +1,13 @@
 package com.taskflow.repository;
 
+import com.taskflow.model.Priority;
 import com.taskflow.model.Task;
 import com.taskflow.model.TaskStatus;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.Instant;
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,24 +24,43 @@ import java.util.concurrent.atomic.AtomicLong;
 @ApplicationScoped
 public class TaskRepository {
 
+    /** The ways a task list can be sorted (step 3). */
+    public enum SortBy {
+        ID(Comparator.comparing(Task::getId)),
+        // HIGH first, then MEDIUM, then LOW; ties broken by soonest due date
+        PRIORITY(Comparator.comparing(Task::getPriority)
+                .thenComparing(Task::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))),
+        // soonest due date first; tasks with no due date go last
+        DUE_DATE(Comparator.comparing(Task::getDueDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(Task::getPriority)),
+        // newest first
+        CREATED_AT(Comparator.comparing(Task::getCreatedAt).reversed());
+
+        private final Comparator<Task> comparator;
+
+        SortBy(Comparator<Task> comparator) {
+            this.comparator = comparator;
+        }
+    }
+
     private final Map<Long, Task> tasks = new ConcurrentHashMap<>();
     private final AtomicLong nextId = new AtomicLong(1);
 
     @PostConstruct
     void seed() {
-        save(new Task("Install WebSphere Liberty", "Run mvn liberty:dev"));
-        save(new Task("Try the API", "Open http://localhost:9080/openapi/ui"));
+        LocalDate today = LocalDate.now();
+        save(new Task("Install WebSphere Liberty", "Run mvn liberty:dev", Priority.HIGH, today.minusDays(1)));
+        save(new Task("Try the API", "Open http://localhost:9080/openapi/ui", Priority.MEDIUM, today.plusDays(2)));
+        save(new Task("Read about MicroProfile", "Health, Config, Metrics", Priority.LOW, null));
     }
 
-    public List<Task> findAll(TaskStatus status) {
-        List<Task> result = new ArrayList<>();
-        for (Task t : tasks.values()) {
-            if (status == null || t.getStatus() == status) {
-                result.add(t);
-            }
-        }
-        result.sort(Comparator.comparing(Task::getId));
-        return result;
+    /** status and priority are optional filters (null = no filter). */
+    public List<Task> findAll(TaskStatus status, Priority priority, SortBy sortBy) {
+        return tasks.values().stream()
+                .filter(t -> status == null || t.getStatus() == status)
+                .filter(t -> priority == null || t.getPriority() == priority)
+                .sorted(sortBy == null ? SortBy.ID.comparator : sortBy.comparator)
+                .toList();
     }
 
     public Optional<Task> findById(Long id) {
@@ -54,6 +74,9 @@ public class TaskRepository {
         }
         if (task.getStatus() == null) {
             task.setStatus(TaskStatus.TODO);
+        }
+        if (task.getPriority() == null) {
+            task.setPriority(Priority.MEDIUM);
         }
         tasks.put(task.getId(), task);
         return task;

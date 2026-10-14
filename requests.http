@@ -32,3 +32,32 @@ Content-Type: application/json
 
 ### Health
 GET http://localhost:9080/health
+
+### ---------- Step 3: priority, due dates, sorting ----------
+
+### Create a high-priority task with a due date
+POST http://localhost:9080/api/tasks
+Content-Type: application/json
+
+{ "title": "Prepare demo", "priority": "HIGH", "dueDate": "2026-12-01" }
+
+### Only HIGH priority tasks
+GET http://localhost:9080/api/tasks?priority=HIGH
+
+### Most urgent first (HIGH -> LOW)
+GET http://localhost:9080/api/tasks?sort=priority
+
+### Soonest deadline first (no due date goes last)
+GET http://localhost:9080/api/tasks?sort=dueDate
+
+### Combine: unfinished tasks, soonest deadline first
+GET http://localhost:9080/api/tasks?status=TODO&sort=dueDate
+
+### Mark the overdue task as done (overdue flag becomes false)
+PUT http://localhost:9080/api/tasks/1
+Content-Type: application/json
+
+{ "title": "Install WebSphere Liberty", "status": "DONE", "priority": "HIGH", "dueDate": "2026-10-13" }
+
+### Bad sort value -> 400 with a JSON error
+GET http://localhost:9080/api/tasks?sort=banana
