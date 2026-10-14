@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="TaskFlow server">
+
+    <!-- Liberty only loads the features listed here. Add a line to add a capability. -->
+    <featureManager>
+        <feature>restfulWS-3.1</feature>      <!-- REST endpoints (JAX-RS) -->
+        <feature>jsonb-3.0</feature>          <!-- Java objects <-> JSON -->
+        <feature>cdi-4.0</feature>            <!-- Dependency injection (@Inject) -->
+        <feature>beanValidation-3.0</feature> <!-- @NotBlank, @Size on input -->
+        <feature>mpHealth-4.0</feature>       <!-- /health endpoints -->
+        <feature>mpOpenAPI-3.1</feature>      <!-- /openapi and Swagger UI -->
+    </featureManager>
+
+    <!-- Ports come from pom.xml (liberty.var.*), with these as fallbacks -->
+    <variable name="http.port" defaultValue="9080"/>
+    <variable name="https.port" defaultValue="9443"/>
+
+    <httpEndpoint id="defaultHttpEndpoint"
+                  host="*"
+                  httpPort="${http.port}"
+                  httpsPort="${https.port}"/>
+
+    <!-- The app built by Maven (target/liberty-taskflow.war), served at http://localhost:9080/ -->
+    <webApplication location="liberty-taskflow.war" contextRoot="/"/>
+
+    <!-- Faster startup during development -->
+    <applicationManager autoExpand="true"/>
+</server>

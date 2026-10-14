@@ -1,0 +1,34 @@
+### Handy test requests. Works in VS Code (REST Client extension) and IntelliJ.
+
+### List all tasks
+GET http://localhost:9080/api/tasks
+
+### Only finished tasks
+GET http://localhost:9080/api/tasks?status=DONE
+
+### Get one task
+GET http://localhost:9080/api/tasks/1
+
+### Create a task
+POST http://localhost:9080/api/tasks
+Content-Type: application/json
+
+{ "title": "Write README", "description": "Explain how to run the app" }
+
+### Update a task
+PUT http://localhost:9080/api/tasks/1
+Content-Type: application/json
+
+{ "title": "Install WebSphere Liberty", "description": "Done!", "status": "DONE" }
+
+### Delete a task
+DELETE http://localhost:9080/api/tasks/2
+
+### Validation error (empty title -> 400)
+POST http://localhost:9080/api/tasks
+Content-Type: application/json
+
+{ "title": "" }
+
+### Health
+GET http://localhost:9080/health
